@@ -1,0 +1,84 @@
+The database is designed to monitor and manage all energy systems supporting a Mars surface mission, including electrical power, thermal control, and fuel-based systems.
+The system should allow tracking of energy generation, storage, conversion, and consumption across habitat and mission infrastructure.
+It should ensure a stable operation of critical systems, support energy prioritization, and record environmental factors that may affect production and efficiency.
+
+Power source type, maximum output, efficiency, operational status, installation date, storage type, total capacity, current power level, storage health status, conversion system type, system category, priority level, nominal energy consumption, peak energy consumption, operational state, thermal output, fuel level, Sol number, atmospheric optical depth, temperature, solar irradiance, maintenance task, component, technician, repair date, next inspection date.
+
+
+Energy source type (solar, fission, RTG, fuel-based)
+Rodzaj źródła energii – np. panele słoneczne, reaktor rozszczepieniowy, generator RTG, system oparty na paliwie chemicznym.
+
+Maximum output
+Maksymalna możliwa moc/ilość energii, jaką dane źródło może wygenerować w optymalnych warunkach.
+
+Efficiency
+Sprawność systemu – procent energii wejściowej, który jest skutecznie przekształcany w użyteczną energię.
+
+Operational status
+Aktualny stan działania systemu (aktywny, w trybie oszczędnym, wyłączony, awaria).
+
+Installation date
+Data instalacji lub uruchomienia danego systemu energetycznego.
+
+Storage type (batteries, fuel tanks, thermal storage)
+Rodzaj magazynu energii – np. baterie, zbiorniki paliwa, magazyny energii cieplnej.
+
+Total capacity
+Całkowita pojemność magazynu energii (ile maksymalnie może przechować).
+
+Current level
+Aktualny poziom zgromadzonej energii (np. poziom naładowania baterii lub ilość paliwa).
+
+Storage health status
+Stan techniczny magazynu energii (zużycie, degradacja, liczba cykli pracy).
+
+Conversion system type
+Typ systemu przetwarzania energii, np. generator, przetwornik, ogniwo paliwowe, wymiennik ciepła.
+
+System category
+Kategoria odbiornika energii, np. life support, komunikacja, systemy naukowe, habitat.
+
+Priority level
+Poziom priorytetu danego systemu (krytyczny, wysoki, średni, niski) – określa, które systemy muszą działać w pierwszej kolejności.
+
+Nominal energy consumption
+Standardowe (średnie) zużycie energii podczas normalnej pracy.
+
+Peak energy consumption
+Maksymalne chwilowe zużycie energii przy pełnym obciążeniu.
+
+Operational state
+Aktualny tryb pracy odbiornika energii (aktywny, standby, wyłączony, awaryjny).
+
+Thermal output
+Ilość wytwarzanego lub przekazywanego ciepła przez dany system.
+
+Fuel level
+Aktualna ilość paliwa w zbiornikach.
+
+Sol number
+Numer marsjańskiego dnia operacyjnego misji (Sol).
+
+Atmospheric optical depth (Tau)
+Wskaźnik zapylenia atmosfery Marsa, wpływający na ilość światła docierającego do paneli słonecznych.
+
+Temperature
+Temperatura otoczenia, która może wpływać na sprawność systemów energetycznych.
+
+Solar irradiance
+Natężenie promieniowania słonecznego docierającego do powierzchni.
+
+Maintenance task
+Opis wykonanej czynności serwisowej.
+
+Component
+Element systemu, którego dotyczy konserwacja lub naprawa.
+
+Technician
+Osoba odpowiedzialna za wykonanie przeglądu lub naprawy.
+
+Repair date
+Data wykonania naprawy.
+
+Next inspection date
+Planowana data kolejnego przeglądu technicznego.

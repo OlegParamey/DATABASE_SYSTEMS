@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PL/SQL — Интерактивный учебник</title>
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --bg2: #ffffff;
+    --bg3: #f0efe9;
+    --text: #1a1a18;
+    --text2: #5a5a56;
+    --text3: #8a8a84;
+    --border: rgba(0,0,0,0.1);
+    --border2: rgba(0,0,0,0.18);
+    --accent: #4a3fb5;
+    --accent2: #ede9fb;
+    --green: #1d6e4a;
+    --green2: #e1f5ee;
+    --amber: #a06010;
+    --amber2: #faeeda;
+    --red: #991a1a;
+    --red2: #fcebeb;
+    --blue: #1a5a9a;
+    --blue2: #e6f1fb;
+    --code-bg: #f3f2ed;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --bg2: #242420; --bg3: #2c2c28;
+      --text: #e8e6dc; --text2: #a0a098; --text3: #68685e;
+      --border: rgba(255,255,255,0.09); --border2: rgba(255,255,255,0.16);
+      --accent: #8b7eef; --accent2: #26215c;
+      --green: #5dcaa5; --green2: #04342c;
+      --amber: #ef9f27; --amber2: #412402;
+      --red: #e24b4a; --red2: #501313;
+      --blue: #378add; --blue2: #042c53;
+      --code-bg: #2c2c28;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); font-size: 15px; line-height: 1.7; }
+  .app { display: flex; min-height: 100vh; }
+  /* Sidebar */
+  .sidebar { width: 240px; background: var(--bg2); border-right: 0.5px solid var(--border); padding: 24px 0; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .sidebar-title { font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 20px 12px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 20px; cursor: pointer; font-size: 13px; color: var(--text2); border-left: 2px solid transparent; transition: all 0.15s; }
+  .nav-item:hover { background: var(--bg3); color: var(--text); }
+  .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: var(--accent2); font-weight: 500; }
+  .nav-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border2); flex-shrink: 0; }
+  .nav-item.active .nav-dot { background: var(--accent); }
+  .progress-bar { margin: 16px 20px 0; height: 3px; background: var(--border); border-radius: 2px; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.4s; }
+  .progress-label { font-size: 11px; color: var(--text3); margin: 6px 20px 0; }
+  /* Main content */
+  .main { flex: 1; padding: 40px 48px; max-width: 860px; }
+  .section { display: none; }
+  .section.active { display: block; }
+  h1 { font-size: 26px; font-weight: 500; margin-bottom: 6px; }
+  h2 { font-size: 19px; font-weight: 500; margin: 32px 0 12px; }
+  h3 { font-size: 16px; font-weight: 500; margin: 24px 0 8px; color: var(--text2); }
+  p { margin-bottom: 12px; }
+  .subtitle { color: var(--text2); font-size: 14px; margin-bottom: 28px; }
+  /* Cards */
+  .card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .feature-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .feature-card .icon { font-size: 20px; margin-bottom: 8px; }
+  .feature-card h4 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .feature-card p { font-size: 13px; color: var(--text2); margin: 0; line-height: 1.5; }
+  /* Code blocks */
+  .code-block { background: var(--code-bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.7; margin: 12px 0 16px; overflow-x: auto; position: relative; }
+  .code-block .kw { color: var(--accent); font-weight: 500; }
+  .code-block .cm { color: var(--text3); font-style: italic; }
+  .code-block .str { color: var(--green); }
+  .code-block .num { color: var(--amber); }
+  .copy-btn { position: absolute; top: 8px; right: 8px; font-size: 11px; padding: 3px 8px; background: var(--bg3); border: 0.5px solid var(--border2); border-radius: 4px; cursor: pointer; color: var(--text2); transition: background 0.15s; }
+  .copy-btn:hover { background: var(--border); }
+  /* Badges */
+  .badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .badge-blue { background: var(--blue2); color: var(--blue); }
+  .badge-green { background: var(--green2); color: var(--green); }
+  .badge-amber { background: var(--amber2); color: var(--amber); }
+  .badge-red { background: var(--red2); color: var(--red); }
+  .badge-purple { background: var(--accent2); color: var(--accent); }
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0 16px; }
+  th { text-align: left; padding: 8px 12px; background: var(--bg3); font-weight: 500; font-size: 12px; color: var(--text2); border-bottom: 0.5px solid var(--border2); }
+  td { padding: 8px 12px; border-bottom: 0.5px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  /* Quiz */
+  .quiz-card { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 24px; margin-bottom: 16px; }
+  .quiz-q { font-weight: 500; margin-bottom: 16px; font-size: 15px; }
+  .quiz-opts { display: flex; flex-direction: column; gap: 8px; }
+  .quiz-opt { padding: 10px 14px; border: 0.5px solid var(--border2); border-radius: 7px; cursor: pointer; font-size: 14px; transition: all 0.15s; }
+  .quiz-opt:hover { background: var(--bg3); }
+  .quiz-opt.correct { background: var(--green2); border-color: var(--green); color: var(--green); }
+  .quiz-opt.wrong { background: var(--red2); border-color: var(--red); color: var(--red); }
+  .quiz-explanation { margin-top: 12px; font-size: 13px; color: var(--text2); background: var(--bg3); padding: 10px 14px; border-radius: 6px; display: none; }
+  .quiz-explanation.show { display: block; }
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 0.5px solid var(--border2); margin-bottom: 20px; }
+  .tab { padding: 8px 16px; font-size: 13px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.15s; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  /* Alert/info boxes */
+  .info-box { border-left: 3px solid var(--blue); background: var(--blue2); padding: 12px 16px; border-radius: 0 7px 7px 0; margin: 12px 0; font-size: 14px; }
+  .warn-box { border-left: 3px solid var(--amber); background: var(--amber2); padding: 12px 16px; border-radius: 0 7px 7px 0; margin: 12px 0; font-size: 14px; }
+  .tip-box { border-left: 3px solid var(--green); background: var(--green2); padding: 12px 16px; border-radius: 0 7px 7px 0; margin: 12px 0; font-size: 14px; }
+  /* Structure diagram (text-based) */
+  .block-diagram { background: var(--code-bg); border: 0.5px solid var(--border); border-radius: 8px; padding: 16px 20px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.8; }
+  .bd-optional { color: var(--text3); }
+  .bd-required { color: var(--accent); font-weight: 500; }
+  .bd-key { color: var(--green); }
+  /* Interactive stepper */
+  .stepper { border: 0.5px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 16px 0; }
+  .stepper-header { display: flex; }
+  .step-btn { flex: 1; padding: 10px 6px; font-size: 12px; cursor: pointer; background: var(--bg3); border: none; border-right: 0.5px solid var(--border); color: var(--text2); transition: all 0.15s; }
+  .step-btn:last-child { border-right: none; }
+  .step-btn.active { background: var(--accent2); color: var(--accent); font-weight: 500; }
+  .stepper-body { padding: 20px 24px; background: var(--bg2); min-height: 140px; }
+  /* Exceptions list */
+  .exc-grid { display: grid; gap: 8px; }
+  .exc-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 7px; font-size: 13px; }
+  .exc-name { font-family: 'Courier New', monospace; font-weight: 500; color: var(--red); min-width: 180px; flex-shrink: 0; }
+  .exc-desc { color: var(--text2); }
+  /* Divider */
+  .divider { height: 0.5px; background: var(--border); margin: 28px 0; }
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .section-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent2); color: var(--accent); font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  /* Nav bottom buttons */
+  .nav-footer { display: flex; gap: 10px; margin-top: 32px; padding-top: 24px; border-top: 0.5px solid var(--border); }
+  .btn { padding: 8px 18px; border-radius: 7px; font-size: 13px; cursor: pointer; border: 0.5px solid var(--border2); background: var(--bg2); color: var(--text); transition: all 0.15s; }
+  .btn:hover { background: var(--bg3); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  @media (max-width: 700px) {
+    .sidebar { display: none; }
+    .main { padding: 24px 20px; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-title">PL/SQL Курс</div>
+    <div class="nav-item active" onclick="goTo(0)"><span class="nav-dot"></span> Введение</div>
+    <div class="nav-item" onclick="goTo(1)"><span class="nav-dot"></span> Структура блока</div>
+    <div class="nav-item" onclick="goTo(2)"><span class="nav-dot"></span> Переменные</div>
+    <div class="nav-item" onclick="goTo(3)"><span class="nav-dot"></span> SQL в PL/SQL</div>
+    <div class="nav-item" onclick="goTo(4)"><span class="nav-dot"></span> Управление ходом</div>
+    <div class="nav-item" onclick="goTo(5)"><span class="nav-dot"></span> Курсоры</div>
+    <div class="nav-item" onclick="goTo(6)"><span class="nav-dot"></span> Исключения</div>
+    <div class="nav-item" onclick="goTo(7)"><span class="nav-dot"></span> Проверь себя</div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:12%"></div></div>
+    <div class="progress-label" id="progress-label">1 / 8 разделов</div>
+  </nav>
+
+  <!-- Content -->
+  <main class="main">
+
+    <!-- 0: Введение -->
+    <div class="section active" id="sec-0">
+      <div class="section-header"><div class="section-num">1</div><h1>Что такое PL/SQL?</h1></div>
+      <p class="subtitle">Процедурное расширение SQL от Oracle — объединяет мощь баз данных с логикой программирования</p>
+
+      <h2>Зачем нужен PL/SQL, если есть SQL?</h2>
+      <div class="card-grid">
+        <div class="feature-card">
+          <div class="icon">🚫</div><h4>SQL не умеет</h4>
+          <p>Циклы, условия, переменные, обработку ошибок, сложную бизнес-логику</p>
+        </div>
+        <div class="feature-card">
+          <div class="icon">✅</div><h4>PL/SQL умеет</h4>
+          <p>Процедурную логику прямо внутри базы данных, сохранённые процедуры и триггеры</p>
+        </div>
+      </div>
+
+      <h2>Ключевые характеристики</h2>
+      <div class="card">
+        <table>
+          <tr><th>Характеристика</th><th>Описание</th></tr>
+          <tr><td><span class="badge badge-purple">Парадигма</span></td><td>Процедурный язык, ориентированный на обработку данных</td></tr>
+          <tr><td><span class="badge badge-blue">Компиляция</span></td><td>Компилируемый язык — код проверяется до выполнения</td></tr>
+          <tr><td><span class="badge badge-green">Блочная структура</span></td><td>Код организован в блоки: DECLARE → BEGIN → EXCEPTION → END</td></tr>
+          <tr><td><span class="badge badge-amber">Совместимость</span></td><td>Можно использовать DML и TCL, но не DDL и DCL</td></tr>
+          <tr><td><span class="badge badge-red">Оператор присвоения</span></td><td><code>:=</code> вместо <code>=</code></td></tr>
+        </table>
+      </div>
+
+      <div class="info-box">
+        <strong>Аналоги в других СУБД:</strong> PostgreSQL → PL/pgSQL, Microsoft SQL Server → T-SQL, MySQL → собственный диалект. Все работают схоже, но синтаксис отличается.
+      </div>
+
+      <div class="nav-footer"><button class="btn btn-primary" onclick="goTo(1)">Следующий раздел →</button></div>
+    </div>
+
+    <!-- 1: Структура блока -->
+    <div class="section" id="sec-1">
+      <div class="section-header"><div class="section-num">2</div><h1>Структура PL/SQL блока</h1></div>
+      <p class="subtitle">Любой PL/SQL код организован в блоки с фиксированной структурой</p>
+
+      <h2>Анатомия блока</h2>
+      <div class="block-diagram">
+<span class="bd-optional">[DECLARE</span><br>
+<span class="bd-optional">  v_переменная тип;           -- объявление переменных</span><br>
+<span class="bd-optional">  CURSOR имя IS SELECT ...;   -- курсоры</span><br>
+<span class="bd-optional">  e_исключение EXCEPTION; ]   -- пользовательские исключения</span><br>
+<br>
+<span class="bd-required">BEGIN</span><br>
+<span class="bd-key">  -- обязательная секция</span><br>
+<span class="bd-key">  SQL_инструкции;</span><br>
+<span class="bd-key">  PL/SQL_инструкции;</span><br>
+<br>
+<span class="bd-optional">[EXCEPTION</span><br>
+<span class="bd-optional">  WHEN имя_исключения THEN</span><br>
+<span class="bd-optional">    обработка_ошибки; ]</span><br>
+<br>
+<span class="bd-required">END;</span><br>
+<span class="bd-required">/  -- запуск блока в SQL*Plus / SQL Developer</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <h4>DECLARE <span class="badge badge-purple">необязательно</span></h4>
+          <p>Объявление переменных, констант, курсоров, исключений. Всё, что используется в блоке</p>
+        </div>
+        <div class="feature-card">
+          <h4>BEGIN <span class="badge badge-red">обязательно</span></h4>
+          <p>Основная логика: SQL-запросы, операторы, вызовы подпрограмм</p>
+        </div>
+        <div class="feature-card">
+          <h4>EXCEPTION <span class="badge badge-purple">необязательно</span></h4>
+          <p>Обработка ошибок, которые возникли в секции BEGIN</p>
+        </div>
+        <div class="feature-card">
+          <h4>END; <span class="badge badge-red">обязательно</span></h4>
+          <p>Завершает блок. Символ <code>/</code> на отдельной строке выполняет блок</p>
+        </div>
+      </div>
+
+      <h2>Минимальный рабочий блок</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">BEGIN</span><br>
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'Привет, PL/SQL!'</span>);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <h2>Комментарии</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="cm">-- Однострочный комментарий</span><br>
+  v_x <span class="kw">NUMBER</span> := <span class="num">10</span>; <span class="cm">-- комментарий в конце строки</span><br>
+<br>
+  <span class="cm">/* Многострочный</span><br>
+  <span class="cm">   комментарий */</span><br>
+  v_y <span class="kw">NUMBER</span> := <span class="num">20</span>;<br>
+<span class="kw">BEGIN</span><br>
+  DBMS_OUTPUT.PUT_LINE(v_x + v_y);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(0)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(2)">Следующий раздел →</button>
+      </div>
+    </div>
+
+    <!-- 2: Переменные -->
+    <div class="section" id="sec-2">
+      <div class="section-header"><div class="section-num">3</div><h1>Переменные и константы</h1></div>
+      <p class="subtitle">Хранение и обработка данных внутри PL/SQL блока</p>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-declare')">Объявление</div>
+        <div class="tab" onclick="switchTab(this,'tab-types')">Типы данных</div>
+        <div class="tab" onclick="switchTab(this,'tab-special')">Спец. типы</div>
+        <div class="tab" onclick="switchTab(this,'tab-scope')">Область видимости</div>
+      </div>
+
+      <div class="tab-content active" id="tab-declare">
+        <h3>Синтаксис объявления</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+имя [<span class="kw">CONSTANT</span>] тип [<span class="kw">NOT NULL</span>] [{<span class="kw">:=</span> | <span class="kw">DEFAULT</span>} значение];
+        </div>
+        <h3>Примеры</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  v_age      <span class="kw">NUMBER</span>(<span class="num">3</span>);                    <span class="cm">-- просто объявление</span><br>
+  v_name     <span class="kw">VARCHAR2</span>(<span class="num">30</span>) := <span class="str">'Анна'</span>;   <span class="cm">-- с начальным значением</span><br>
+  v_counter  <span class="kw">NUMBER</span>(<span class="num">4</span>) <span class="kw">NOT NULL</span> := <span class="num">0</span>; <span class="cm">-- не может быть NULL</span><br>
+  v_sum      <span class="kw">NUMBER</span>(<span class="num">10</span>) <span class="kw">DEFAULT</span> <span class="num">0</span>;    <span class="cm">-- через DEFAULT</span><br>
+  c_pi       <span class="kw">CONSTANT NUMBER</span> := <span class="num">3.1415</span>; <span class="cm">-- константа</span><br>
+<span class="kw">BEGIN</span><br>
+  v_age := <span class="num">25</span>;                          <span class="cm">-- присвоение в BEGIN</span><br>
+  DBMS_OUTPUT.PUT_LINE(v_name || <span class="str">', возраст: '</span> || v_age);<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+        <div class="warn-box">
+          <strong>Правила имён переменных:</strong> начинается с буквы, содержит буквы/цифры/_/$/#, не более 30 символов, не совпадает с ключевыми словами SQL/PL/SQL, не содержит пробелов.<br>
+          <strong>Принято использовать префиксы:</strong> <code>v_</code> для переменных, <code>c_</code> для констант.
+        </div>
+        <h3>Специальные символы в строках</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- Экранирование апострофа — удвоить одинарную кавычку</span><br>
+v_str := <span class="str">'I''m learning'</span>;<br>
+<br>
+<span class="cm">-- Нотация q' — указываем свой разделитель</span><br>
+v_str := <span class="kw">q'</span><span class="str">!I'm listening!</span><span class="kw">'</span>;<br>
+v_str := <span class="kw">q'</span><span class="str">[I'm bored]</span><span class="kw">'</span>;
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-types">
+        <h3>Скалярные типы</h3>
+        <table>
+          <tr><th>Категория</th><th>Типы</th><th>Пример</th></tr>
+          <tr><td><span class="badge badge-blue">Числовые</span></td><td>NUMBER, INTEGER, FLOAT, BINARY_INTEGER</td><td><code>v_x NUMBER(10,2)</code></td></tr>
+          <tr><td><span class="badge badge-green">Символьные</span></td><td>VARCHAR2, CHAR, NVARCHAR2</td><td><code>v_name VARCHAR2(50)</code></td></tr>
+          <tr><td><span class="badge badge-purple">Логический</span></td><td>BOOLEAN</td><td><code>v_flag BOOLEAN := TRUE</code></td></tr>
+          <tr><td><span class="badge badge-amber">Дата/время</span></td><td>DATE, TIMESTAMP</td><td><code>v_dt DATE := SYSDATE</code></td></tr>
+        </table>
+        <div class="info-box">
+          <strong>Важно:</strong> тип BOOLEAN существует только в PL/SQL — в обычных SQL-запросах его нет. Значения: TRUE, FALSE, NULL.
+        </div>
+        <h3>Преобразование типов</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- Явное преобразование (надёжнее)</span><br>
+v_str := TO_CHAR(v_num);              <span class="cm">-- число → строка</span><br>
+v_num := TO_NUMBER(<span class="str">'42'</span>);          <span class="cm">-- строка → число</span><br>
+v_dt  := TO_DATE(<span class="str">'01.01.2024'</span>,<span class="str">'DD.MM.YYYY'</span>);<br>
+<br>
+<span class="cm">-- Неявное (автоматически, но может вызвать ошибки!)</span><br>
+v_num := <span class="str">'100'</span>;   <span class="cm">-- Oracle сам преобразует строку в число</span>
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-special">
+        <h3>%TYPE — тип из столбца таблицы</h3>
+        <p>Переменная получает тот же тип, что и столбец в базе данных. Это защищает от несоответствия типов.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="cm">-- v_name получает тип колонки employees.first_name</span><br>
+  v_name employees.first_name<span class="kw">%TYPE</span>;<br>
+  v_sal  employees.salary<span class="kw">%TYPE</span>;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">SELECT</span> first_name, salary<br>
+  <span class="kw">INTO</span>   v_name, v_sal<br>
+  <span class="kw">FROM</span>   employees<br>
+  <span class="kw">WHERE</span>  employee_id = <span class="num">100</span>;<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+
+        <h3>%ROWTYPE — тип строки таблицы</h3>
+        <p>Переменная-запись, структура которой совпадает со строкой таблицы.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  vr_emp employees<span class="kw">%ROWTYPE</span>; <span class="cm">-- все поля строки employees</span><br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">SELECT</span> * <span class="kw">INTO</span> vr_emp<br>
+  <span class="kw">FROM</span>   employees<br>
+  <span class="kw">WHERE</span>  employee_id = <span class="num">100</span>;<br>
+  <br>
+  DBMS_OUTPUT.PUT_LINE(vr_emp.first_name || <span class="str">' '</span> || vr_emp.last_name);<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+
+        <h3>RECORD — пользовательская запись</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="kw">TYPE</span> r_address <span class="kw">IS RECORD</span> (<br>
+    v_street  <span class="kw">VARCHAR2</span>(<span class="num">30</span>),<br>
+    v_city    <span class="kw">VARCHAR2</span>(<span class="num">20</span>),<br>
+    v_zip     <span class="kw">VARCHAR2</span>(<span class="num">6</span>)<br>
+  );<br>
+  vr_addr r_address;<br>
+<span class="kw">BEGIN</span><br>
+  vr_addr.v_street := <span class="str">'ул. Ленина'</span>;<br>
+  vr_addr.v_city   := <span class="str">'Москва'</span>;<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-scope">
+        <h3>Область видимости переменных</h3>
+        <p>Переменная видна только в том блоке, где она объявлена, и во вложенных блоках.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  v_outer <span class="kw">NUMBER</span> := <span class="num">10</span>; <span class="cm">-- видна везде</span><br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">DECLARE</span><br>
+    v_inner <span class="kw">NUMBER</span> := <span class="num">20</span>; <span class="cm">-- видна только здесь</span><br>
+  <span class="kw">BEGIN</span><br>
+    DBMS_OUTPUT.PUT_LINE(v_outer + v_inner); <span class="cm">-- OK: 30</span><br>
+  <span class="kw">END</span>;<br>
+  <span class="cm">-- v_inner здесь уже НЕ видна</span><br>
+  DBMS_OUTPUT.PUT_LINE(v_outer); <span class="cm">-- OK: 10</span><br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(1)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(3)">Следующий раздел →</button>
+      </div>
+    </div>
+
+    <!-- 3: SQL в PL/SQL -->
+    <div class="section" id="sec-3">
+      <div class="section-header"><div class="section-num">4</div><h1>SQL внутри PL/SQL</h1></div>
+      <p class="subtitle">Как встраивать запросы и DML-операции в блоки PL/SQL</p>
+
+      <h2>SELECT INTO — выборка в переменную</h2>
+      <div class="warn-box">
+        <strong>Три жёстких правила SELECT INTO:</strong><br>
+        1. Запрос должен вернуть <strong>ровно одну строку</strong> (иначе: TOO_MANY_ROWS или NO_DATA_FOUND)<br>
+        2. Предложение <strong>INTO обязательно</strong><br>
+        3. Имена столбцов БД <strong>имеют приоритет</strong> над именами переменных
+      </div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  v_name   employees.first_name<span class="kw">%TYPE</span>;<br>
+  v_salary employees.salary<span class="kw">%TYPE</span>;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">SELECT</span> first_name, salary<br>
+  <span class="kw">INTO</span>   v_name, v_salary<br>
+  <span class="kw">FROM</span>   employees<br>
+  <span class="kw">WHERE</span>  employee_id = <span class="num">200</span>;<br>
+<br>
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'Имя: '</span> || v_name || <span class="str">', Зарплата: '</span> || v_salary);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <h2>DML операции (INSERT, UPDATE, DELETE)</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  v_new_id departments.department_id<span class="kw">%TYPE</span>;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="cm">-- INSERT с RETURNING — возвращает значение вставленной строки</span><br>
+  <span class="kw">INSERT INTO</span> departments (department_id, department_name)<br>
+  <span class="kw">VALUES</span> (<span class="num">300</span>, <span class="str">'Analytics'</span>)<br>
+  <span class="kw">RETURNING</span> department_id <span class="kw">INTO</span> v_new_id;<br>
+<br>
+  <span class="cm">-- UPDATE как обычно</span><br>
+  <span class="kw">UPDATE</span> employees<br>
+  <span class="kw">SET</span>    salary = salary * <span class="num">1.1</span><br>
+  <span class="kw">WHERE</span>  department_id = v_new_id;<br>
+<br>
+  <span class="cm">-- Фиксируем транзакцию</span><br>
+  <span class="kw">COMMIT</span>;<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <h2>Встроенные SQL-функции</h2>
+      <div class="card">
+        <table>
+          <tr><th>Функция</th><th>Что делает</th><th>Пример</th></tr>
+          <tr><td><code>UPPER(str)</code></td><td>В верхний регистр</td><td><code>UPPER('hello') → 'HELLO'</code></td></tr>
+          <tr><td><code>LENGTH(str)</code></td><td>Длина строки</td><td><code>LENGTH('abc') → 3</code></td></tr>
+          <tr><td><code>SUBSTR(str,n,m)</code></td><td>Подстрока</td><td><code>SUBSTR('hello',2,3) → 'ell'</code></td></tr>
+          <tr><td><code>TO_CHAR(val,fmt)</code></td><td>В строку</td><td><code>TO_CHAR(SYSDATE,'DD.MM.YYYY')</code></td></tr>
+          <tr><td><code>ROUND(n,d)</code></td><td>Округление</td><td><code>ROUND(3.567,2) → 3.57</code></td></tr>
+          <tr><td><code>SYSDATE</code></td><td>Текущая дата</td><td><code>v_dt := SYSDATE</code></td></tr>
+          <tr><td><code>LAST_DAY(d)</code></td><td>Последний день месяца</td><td><code>LAST_DAY(SYSDATE)</code></td></tr>
+        </table>
+      </div>
+      <div class="warn-box"><strong>Нельзя использовать в PL/SQL:</strong> функцию DECODE и агрегатные функции (SUM, COUNT, AVG и т.д.) — только в SQL-запросах внутри блока.</div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(2)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(4)">Следующий раздел →</button>
+      </div>
+    </div>
+
+    <!-- 4: Управление ходом -->
+    <div class="section" id="sec-4">
+      <div class="section-header"><div class="section-num">5</div><h1>Управляющие конструкции</h1></div>
+      <p class="subtitle">Условия и циклы — то, ради чего PL/SQL и был создан</p>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-if')">IF / ELSIF</div>
+        <div class="tab" onclick="switchTab(this,'tab-case')">CASE</div>
+        <div class="tab" onclick="switchTab(this,'tab-loops')">Циклы</div>
+      </div>
+
+      <div class="tab-content active" id="tab-if">
+        <h3>Три формы IF</h3>
+        <div class="stepper">
+          <div class="stepper-header">
+            <button class="step-btn active" onclick="switchStep(this,'if-1','if-steps')">Простой IF</button>
+            <button class="step-btn" onclick="switchStep(this,'if-2','if-steps')">IF / ELSE</button>
+            <button class="step-btn" onclick="switchStep(this,'if-3','if-steps')">IF / ELSIF / ELSE</button>
+          </div>
+          <div class="stepper-body">
+            <div class="tab-content active" id="if-1">
+              <div class="code-block" style="margin:0">
+<span class="kw">IF</span> условие <span class="kw">THEN</span><br>
+  инструкции;<br>
+<span class="kw">END IF</span>;
+              </div>
+              <p style="margin-top:12px;font-size:13px;color:var(--text2)">Выполняет инструкции, только если условие истинно (TRUE). Если FALSE или NULL — пропускает.</p>
+            </div>
+            <div class="tab-content" id="if-2">
+              <div class="code-block" style="margin:0">
+<span class="kw">IF</span> условие <span class="kw">THEN</span><br>
+  инструкции_1;<br>
+<span class="kw">ELSE</span><br>
+  инструкции_2;<br>
+<span class="kw">END IF</span>;
+              </div>
+              <p style="margin-top:12px;font-size:13px;color:var(--text2)">ELSE выполняется при любом результате, отличном от TRUE (в т.ч. при NULL).</p>
+            </div>
+            <div class="tab-content" id="if-3">
+              <div class="code-block" style="margin:0">
+<span class="kw">IF</span> условие_1 <span class="kw">THEN</span><br>
+  инструкции_1;<br>
+<span class="kw">ELSIF</span> условие_2 <span class="kw">THEN</span><br>
+  инструкции_2;<br>
+<span class="kw">ELSIF</span> условие_3 <span class="kw">THEN</span><br>
+  инструкции_3;<br>
+<span class="kw">ELSE</span><br>
+  инструкции_n;<br>
+<span class="kw">END IF</span>;
+              </div>
+              <p style="margin-top:12px;font-size:13px;color:var(--text2)">Пишется <code>ELSIF</code>, а не <code>ELSEIF</code>! Условия проверяются по очереди — выполняется первое подходящее.</p>
+            </div>
+          </div>
+        </div>
+        <h3>Практический пример</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  v_score <span class="kw">NUMBER</span> := <span class="num">75</span>;<br>
+  v_grade <span class="kw">VARCHAR2</span>(<span class="num">1</span>);<br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">IF</span>    v_score >= <span class="num">90</span> <span class="kw">THEN</span> v_grade := <span class="str">'A'</span>;<br>
+  <span class="kw">ELSIF</span> v_score >= <span class="num">80</span> <span class="kw">THEN</span> v_grade := <span class="str">'B'</span>;<br>
+  <span class="kw">ELSIF</span> v_score >= <span class="num">70</span> <span class="kw">THEN</span> v_grade := <span class="str">'C'</span>;<br>
+  <span class="kw">ELSE</span>                     v_grade := <span class="str">'F'</span>;<br>
+  <span class="kw">END IF</span>;<br>
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'Оценка: '</span> || v_grade);<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-case">
+        <h3>CASE — две формы</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- Форма 1: простой CASE (проверяет равенство)</span><br>
+<span class="kw">CASE</span> v_day<br>
+  <span class="kw">WHEN</span> <span class="num">1</span> <span class="kw">THEN</span> DBMS_OUTPUT.PUT_LINE(<span class="str">'Понедельник'</span>);<br>
+  <span class="kw">WHEN</span> <span class="num">2</span> <span class="kw">THEN</span> DBMS_OUTPUT.PUT_LINE(<span class="str">'Вторник'</span>);<br>
+  <span class="kw">WHEN</span> <span class="num">7</span> <span class="kw">THEN</span> DBMS_OUTPUT.PUT_LINE(<span class="str">'Воскресенье'</span>);<br>
+  <span class="kw">ELSE</span>       DBMS_OUTPUT.PUT_LINE(<span class="str">'Другой день'</span>);<br>
+<span class="kw">END CASE</span>;<br>
+<br>
+<span class="cm">-- Форма 2: поисковый CASE (проверяет условия)</span><br>
+<span class="kw">CASE</span><br>
+  <span class="kw">WHEN</span> v_salary < <span class="num">3000</span>  <span class="kw">THEN</span> v_level := <span class="str">'Junior'</span>;<br>
+  <span class="kw">WHEN</span> v_salary < <span class="num">7000</span>  <span class="kw">THEN</span> v_level := <span class="str">'Middle'</span>;<br>
+  <span class="kw">ELSE</span>                        v_level := <span class="str">'Senior'</span>;<br>
+<span class="kw">END CASE</span>;
+        </div>
+        <div class="warn-box">Если ни одна ветка CASE не подошла и нет ELSE — возникает исключение <strong>CASE_NOT_FOUND</strong>.</div>
+      </div>
+
+      <div class="tab-content" id="tab-loops">
+        <h3>Три вида циклов</h3>
+        <table>
+          <tr><th>Цикл</th><th>Когда использовать</th></tr>
+          <tr><td><code>LOOP ... END LOOP</code></td><td>Тело должно выполниться хотя бы один раз</td></tr>
+          <tr><td><code>WHILE ... LOOP</code></td><td>Условие проверяется до каждой итерации</td></tr>
+          <tr><td><code>FOR i IN 1..n LOOP</code></td><td>Число итераций известно заранее</td></tr>
+        </table>
+
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- LOOP с EXIT</span><br>
+<span class="kw">LOOP</span><br>
+  v_i := v_i + <span class="num">1</span>;<br>
+  <span class="kw">EXIT WHEN</span> v_i > <span class="num">10</span>; <span class="cm">-- выход когда условие TRUE</span><br>
+<span class="kw">END LOOP</span>;<br>
+<br>
+<span class="cm">-- WHILE</span><br>
+<span class="kw">WHILE</span> v_i <= <span class="num">10</span> <span class="kw">LOOP</span><br>
+  v_sum := v_sum + v_i;<br>
+  v_i := v_i + <span class="num">1</span>;<br>
+<span class="kw">END LOOP</span>;<br>
+<br>
+<span class="cm">-- FOR (счётчик i создаётся автоматически, менять нельзя!)</span><br>
+<span class="kw">FOR</span> i <span class="kw">IN</span> <span class="num">1</span>..<span class="num">10</span> <span class="kw">LOOP</span><br>
+  DBMS_OUTPUT.PUT_LINE(i);<br>
+<span class="kw">END LOOP</span>;<br>
+<br>
+<span class="cm">-- FOR в обратном порядке</span><br>
+<span class="kw">FOR</span> i <span class="kw">IN REVERSE</span> <span class="num">1</span>..<span class="num">10</span> <span class="kw">LOOP</span><br>
+  DBMS_OUTPUT.PUT_LINE(i); <span class="cm">-- 10, 9, 8, ... 1</span><br>
+<span class="kw">END LOOP</span>;
+        </div>
+
+        <h3>CONTINUE — пропуск итерации</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">FOR</span> i <span class="kw">IN</span> <span class="num">1</span>..<span class="num">10</span> <span class="kw">LOOP</span><br>
+  <span class="cm">-- Пропускаем чётные числа</span><br>
+  <span class="kw">CONTINUE WHEN</span> MOD(i, <span class="num">2</span>) = <span class="num">0</span>;<br>
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'Нечётное: '</span> || i);<br>
+<span class="kw">END LOOP</span>;
+        </div>
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(3)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(5)">Следующий раздел →</button>
+      </div>
+    </div>
+
+    <!-- 5: Курсоры -->
+    <div class="section" id="sec-5">
+      <div class="section-header"><div class="section-num">6</div><h1>Курсоры</h1></div>
+      <p class="subtitle">Как обрабатывать многострочные результаты запросов</p>
+
+      <div class="info-box"><strong>Курсор</strong> — указатель на приватную область памяти Oracle, которая хранит результат выполнения SELECT или DML. Позволяет обходить результаты строка за строкой.</div>
+
+      <div class="card-grid">
+        <div class="feature-card">
+          <h4>Неявные курсоры</h4>
+          <p>Создаются автоматически для всех DML и SELECT INTO. Управляются Oracle</p>
+        </div>
+        <div class="feature-card">
+          <h4>Явные курсоры</h4>
+          <p>Создаются программистом для SELECT, возвращающих несколько строк. Нужно самому управлять: OPEN → FETCH → CLOSE</p>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'tab-cursor-manual')">Ручное управление</div>
+        <div class="tab" onclick="switchTab(this,'tab-cursor-for')">Cursor FOR Loop</div>
+        <div class="tab" onclick="switchTab(this,'tab-cursor-attrs')">Атрибуты</div>
+      </div>
+
+      <div class="tab-content active" id="tab-cursor-manual">
+        <h3>Полный цикл: объявление → открытие → выборка → закрытие</h3>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="cm">-- 1. Объявление курсора</span><br>
+  <span class="kw">CURSOR</span> c_emp (p_dept_id <span class="kw">NUMBER</span>) <span class="kw">IS</span><br>
+    <span class="kw">SELECT</span> * <span class="kw">FROM</span> employees<br>
+    <span class="kw">WHERE</span>  department_id = p_dept_id;<br>
+<br>
+  vr_emp employees<span class="kw">%ROWTYPE</span>;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="cm">-- 2. Открытие курсора с параметром</span><br>
+  <span class="kw">OPEN</span> c_emp(<span class="num">50</span>);<br>
+<br>
+  <span class="kw">LOOP</span><br>
+    <span class="cm">-- 3. Выборка строки</span><br>
+    <span class="kw">FETCH</span> c_emp <span class="kw">INTO</span> vr_emp;<br>
+    <span class="cm">-- Выход когда строк больше нет</span><br>
+    <span class="kw">EXIT WHEN</span> c_emp<span class="kw">%NOTFOUND</span> <span class="kw">OR</span> c_emp<span class="kw">%NOTFOUND IS NULL</span>;<br>
+<br>
+    DBMS_OUTPUT.PUT_LINE(c_emp<span class="kw">%ROWCOUNT</span> || <span class="str">'. '</span> || vr_emp.last_name);<br>
+  <span class="kw">END LOOP</span>;<br>
+<br>
+  DBMS_OUTPUT.PUT_LINE(<span class="str">'Всего: '</span> || c_emp<span class="kw">%ROWCOUNT</span>);<br>
+<br>
+  <span class="cm">-- 4. Закрытие курсора</span><br>
+  <span class="kw">CLOSE</span> c_emp;<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+      </div>
+
+      <div class="tab-content" id="tab-cursor-for">
+        <h3>Cursor FOR Loop — самый краткий способ</h3>
+        <p>Oracle автоматически открывает, выбирает и закрывает курсор. Рекомендуется как основной подход.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- Вариант 1: с именованным курсором</span><br>
+<span class="kw">DECLARE</span><br>
+  <span class="kw">CURSOR</span> c_emp (<span class="num">p_id</span> <span class="kw">NUMBER</span>) <span class="kw">IS</span><br>
+    <span class="kw">SELECT</span> * <span class="kw">FROM</span> employees <span class="kw">WHERE</span> department_id = p_id;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">FOR</span> vr_emp <span class="kw">IN</span> c_emp(<span class="num">50</span>) <span class="kw">LOOP</span><br>
+    DBMS_OUTPUT.PUT_LINE(vr_emp.last_name);<br>
+  <span class="kw">END LOOP</span>;<br>
+<span class="kw">END</span>;<br>
+/<br>
+<br>
+<span class="cm">-- Вариант 2: с подзапросом (ещё короче)</span><br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">FOR</span> vr_emp <span class="kw">IN</span> (<span class="kw">SELECT</span> * <span class="kw">FROM</span> employees <span class="kw">WHERE</span> department_id = <span class="num">50</span>) <span class="kw">LOOP</span><br>
+    DBMS_OUTPUT.PUT_LINE(vr_emp.last_name);<br>
+  <span class="kw">END LOOP</span>;<br>
+<span class="kw">END</span>;<br>
+/
+        </div>
+        <div class="tip-box">Cursor FOR Loop — предпочтительный способ в большинстве случаев: код короче, нет риска забыть CLOSE.</div>
+      </div>
+
+      <div class="tab-content" id="tab-cursor-attrs">
+        <h3>Атрибуты явного курсора</h3>
+        <table>
+          <tr><th>Атрибут</th><th>Возвращает</th><th>До первого FETCH</th></tr>
+          <tr><td><code>%ISOPEN</code></td><td>TRUE если курсор открыт</td><td>FALSE</td></tr>
+          <tr><td><code>%FOUND</code></td><td>TRUE если последний FETCH вернул строку</td><td>NULL</td></tr>
+          <tr><td><code>%NOTFOUND</code></td><td>TRUE если строк больше нет</td><td>NULL</td></tr>
+          <tr><td><code>%ROWCOUNT</code></td><td>Количество выбранных строк</td><td>0</td></tr>
+        </table>
+        <div class="warn-box"><strong>Важно для EXIT WHEN:</strong> до первого FETCH атрибут %NOTFOUND равен NULL, а не FALSE. Поэтому правильно писать:<br><code>EXIT WHEN c_emp%NOTFOUND OR c_emp%NOTFOUND IS NULL;</code></div>
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(4)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(6)">Следующий раздел →</button>
+      </div>
+    </div>
+
+    <!-- 6: Исключения -->
+    <div class="section" id="sec-6">
+      <div class="section-header"><div class="section-num">7</div><h1>Обработка исключений</h1></div>
+      <p class="subtitle">Как перехватывать и обрабатывать ошибки в PL/SQL</p>
+
+      <h2>Структура обработки</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">BEGIN</span><br>
+  рискованные_инструкции;<br>
+<span class="kw">EXCEPTION</span><br>
+  <span class="kw">WHEN</span> TOO_MANY_ROWS <span class="kw">THEN</span><br>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'Слишком много строк!'</span>);<br>
+  <span class="kw">WHEN</span> NO_DATA_FOUND <span class="kw">THEN</span><br>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'Данные не найдены'</span>);<br>
+  <span class="kw">WHEN OTHERS THEN</span>   <span class="cm">-- перехватывает всё остальное (последним!)</span><br>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'Ошибка: '</span> || SQLERRM);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <h2>Стандартные исключения Oracle</h2>
+      <div class="exc-grid">
+        <div class="exc-item"><span class="exc-name">NO_DATA_FOUND</span><span class="exc-desc">SELECT INTO не вернул ни одной строки</span></div>
+        <div class="exc-item"><span class="exc-name">TOO_MANY_ROWS</span><span class="exc-desc">SELECT INTO вернул более одной строки</span></div>
+        <div class="exc-item"><span class="exc-name">ZERO_DIVIDE</span><span class="exc-desc">Деление на ноль</span></div>
+        <div class="exc-item"><span class="exc-name">DUP_VAL_ON_INDEX</span><span class="exc-desc">Нарушение уникальности (уникальный индекс)</span></div>
+        <div class="exc-item"><span class="exc-name">VALUE_ERROR</span><span class="exc-desc">Арифметическая ошибка, ошибка преобразования или переполнение</span></div>
+        <div class="exc-item"><span class="exc-name">INVALID_CURSOR</span><span class="exc-desc">Попытка закрыть незакрытый или несуществующий курсор</span></div>
+        <div class="exc-item"><span class="exc-name">CASE_NOT_FOUND</span><span class="exc-desc">Нет подходящей ветки WHEN в CASE без ELSE</span></div>
+        <div class="exc-item"><span class="exc-name">CURSOR_ALREADY_OPEN</span><span class="exc-desc">Попытка открыть уже открытый курсор</span></div>
+      </div>
+
+      <h2>Пользовательские исключения</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="cm">-- 1. Объявляем</span><br>
+  e_invalid_id <span class="kw">EXCEPTION</span>;<br>
+  v_id         <span class="kw">NUMBER</span> := <span class="num">0</span>;<br>
+<span class="kw">BEGIN</span><br>
+  <span class="cm">-- 2. Генерируем (RAISE)</span><br>
+  <span class="kw">IF</span> v_id = <span class="num">0</span> <span class="kw">THEN</span><br>
+    <span class="kw">RAISE</span> e_invalid_id;<br>
+  <span class="kw">END IF</span>;<br>
+<span class="kw">EXCEPTION</span><br>
+  <span class="cm">-- 3. Перехватываем</span><br>
+  <span class="kw">WHEN</span> e_invalid_id <span class="kw">THEN</span><br>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'Ошибка: ID не может быть нулевым'</span>);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <h2>RAISE_APPLICATION_ERROR</h2>
+      <p>Позволяет генерировать ошибку с собственным кодом и сообщением из хранимых подпрограмм.</p>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="cm">-- Код ошибки: от -20000 до -20999</span><br>
+<span class="kw">IF</span> v_id = <span class="num">0</span> <span class="kw">THEN</span><br>
+  RAISE_APPLICATION_ERROR(-<span class="num">20001</span>, <span class="str">'ID не может быть нулевым'</span>);<br>
+<span class="kw">END IF</span>;
+      </div>
+
+      <h2>Непредопределённые исключения Oracle</h2>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+<span class="kw">DECLARE</span><br>
+  <span class="cm">-- Связываем имя с кодом ошибки Oracle</span><br>
+  e_insert <span class="kw">EXCEPTION</span>;<br>
+  <span class="kw">PRAGMA EXCEPTION_INIT</span>(e_insert, -<span class="num">01400</span>); <span class="cm">-- ORA-01400: NULL в NOT NULL</span><br>
+<span class="kw">BEGIN</span><br>
+  <span class="kw">INSERT INTO</span> departments (department_id, department_name)<br>
+  <span class="kw">VALUES</span> (<span class="num">400</span>, <span class="kw">NULL</span>);<br>
+<span class="kw">EXCEPTION</span><br>
+  <span class="kw">WHEN</span> e_insert <span class="kw">THEN</span><br>
+    DBMS_OUTPUT.PUT_LINE(<span class="str">'Ошибка вставки: NULL в обязательном поле'</span>);<br>
+<span class="kw">END</span>;<br>
+/
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(5)">← Назад</button>
+        <button class="btn btn-primary" onclick="goTo(7)">Проверить знания →</button>
+      </div>
+    </div>
+
+    <!-- 7: Тест -->
+    <div class="section" id="sec-7">
+      <div class="section-header"><div class="section-num">8</div><h1>Проверь себя</h1></div>
+      <p class="subtitle">10 вопросов по всем темам курса</p>
+
+      <div id="quiz-container"></div>
+      <div id="quiz-result" style="display:none; background:var(--bg2); border:0.5px solid var(--border); border-radius:var(--radius); padding:24px; text-align:center;">
+        <div style="font-size:32px;margin-bottom:8px" id="result-icon">🎉</div>
+        <div style="font-size:20px;font-weight:500;margin-bottom:4px" id="result-score"></div>
+        <div style="color:var(--text2);font-size:14px;margin-bottom:16px" id="result-msg"></div>
+        <button class="btn btn-primary" onclick="resetQuiz()">Пройти снова</button>
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn" onclick="goTo(6)">← Назад</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const SECTIONS = 8;
+let currentSection = 0;
+
+const questions = [
+  { q: 'Какой оператор присвоения используется в PL/SQL?', opts: ['=', ':=', '==', '=>'], correct: 1, exp: 'В PL/SQL присвоение — это :=, тогда как = используется только для сравнения.' },
+  { q: 'Какая секция PL/SQL блока является обязательной?', opts: ['DECLARE', 'BEGIN', 'EXCEPTION', 'Все три'], correct: 1, exp: 'BEGIN — единственная обязательная секция. DECLARE и EXCEPTION — необязательны.' },
+  { q: 'Что вернёт SELECT INTO, если строк нет?', opts: ['NULL', 'Пустой результат', 'Исключение NO_DATA_FOUND', 'Исключение TOO_MANY_ROWS'], correct: 2, exp: 'SELECT INTO требует ровно одну строку. Ноль строк → NO_DATA_FOUND, больше одной → TOO_MANY_ROWS.' },
+  { q: 'Что делает атрибут курсора %ROWCOUNT до первого FETCH?', opts: ['Возвращает NULL', 'Возвращает 0', 'Возвращает 1', 'Вызывает ошибку'], correct: 1, exp: '%ROWCOUNT до первого FETCH равен 0. После каждого успешного FETCH увеличивается на 1.' },
+  { q: 'Какой цикл лучше использовать, если число итераций известно?', opts: ['LOOP ... END LOOP', 'WHILE ... LOOP', 'FOR i IN 1..n LOOP', 'Все подходят одинаково'], correct: 2, exp: 'FOR цикл специально предназначен для случаев с известным числом итераций. Счётчик создаётся автоматически.' },
+  { q: 'Что означает %TYPE при объявлении переменной?', opts: ['Переменная имеет тип ROWTYPE', 'Переменная получает тип из столбца таблицы или другой переменной', 'Переменная является константой', 'Это тип для работы с курсором'], correct: 1, exp: 'v_name employees.first_name%TYPE — переменная v_name получает такой же тип данных, как столбец first_name в таблице employees.' },
+  { q: 'Какое исключение нужно перехватывать последним в блоке EXCEPTION?', opts: ['NO_DATA_FOUND', 'VALUE_ERROR', 'WHEN OTHERS', 'ZERO_DIVIDE'], correct: 2, exp: 'WHEN OTHERS перехватывает все необработанные исключения. Должен стоять последним, иначе другие ветки никогда не выполнятся.' },
+  { q: 'Cursor FOR Loop — в чём его преимущество?', opts: ['Работает быстрее', 'Автоматически открывает, выбирает и закрывает курсор', 'Позволяет использовать параметры', 'Поддерживает только один столбец'], correct: 1, exp: 'Cursor FOR Loop сам выполняет OPEN, FETCH в каждой итерации и CLOSE в конце. Нельзя забыть закрыть курсор.' },
+  { q: 'Что такое PRAGMA EXCEPTION_INIT?', opts: ['Объявление пользовательского исключения', 'Связывание имени исключения с кодом ошибки Oracle', 'Функция для получения текста ошибки', 'Инициализация блока EXCEPTION'], correct: 1, exp: 'PRAGMA EXCEPTION_INIT(e_name, -NNNNN) позволяет использовать собственное имя для стандартной ошибки Oracle по её числовому коду.' },
+  { q: 'Как правильно написать оператор ELSIF в PL/SQL?', opts: ['ELSE IF', 'ELSEIF', 'ELSIF', 'ELIF'], correct: 2, exp: 'В PL/SQL пишется ELSIF (без E перед IF). Это частая ошибка для тех, кто знает другие языки программирования.' },
+];
+
+let answered = [];
+let score = 0;
+
+function buildQuiz() {
+  answered = new Array(questions.length).fill(false);
+  score = 0;
+  const c = document.getElementById('quiz-container');
+  c.innerHTML = questions.map((q, i) => `
+    <div class="quiz-card" id="qcard-${i}">
+      <div class="quiz-q">${i+1}. ${q.q}</div>
+      <div class="quiz-opts">
+        ${q.opts.map((o,j) => `<div class="quiz-opt" onclick="answerQ(${i},${j})" id="qopt-${i}-${j}">${o}</div>`).join('')}
+      </div>
+      <div class="quiz-explanation" id="qexp-${i}">${q.exp}</div>
+    </div>
+  `).join('');
+  document.getElementById('quiz-result').style.display = 'none';
+}
+
+function answerQ(qi, oi) {
+  if (answered[qi]) return;
+  answered[qi] = true;
+  const q = questions[qi];
+  const correct = q.correct;
+  for (let j = 0; j < q.opts.length; j++) {
+    const el = document.getElementById(`qopt-${qi}-${j}`);
+    el.style.pointerEvents = 'none';
+    if (j === correct) el.classList.add('correct');
+    else if (j === oi) el.classList.add('wrong');
+  }
+  document.getElementById(`qexp-${qi}`).classList.add('show');
+  if (oi === correct) score++;
+  if (answered.every(Boolean)) showResult();
+}
+
+function showResult() {
+  const pct = Math.round(score / questions.length * 100);
+  document.getElementById('quiz-result').style.display = 'block';
+  document.getElementById('result-score').textContent = `${score} из ${questions.length} правильных (${pct}%)`;
+  document.getElementById('result-icon').textContent = pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '📖';
+  document.getElementById('result-msg').textContent = pct >= 80 ? 'Отлично! Вы хорошо знаете PL/SQL.' : pct >= 60 ? 'Неплохо, но есть что повторить.' : 'Рекомендую перечитать материал и попробовать снова.';
+  document.getElementById('quiz-result').scrollIntoView({ behavior: 'smooth' });
+}
+
+function resetQuiz() { buildQuiz(); }
+
+function goTo(n) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-' + n).classList.add('active');
+  document.querySelectorAll('.nav-item')[n].classList.add('active');
+  currentSection = n;
+  const pct = Math.round((n + 1) / SECTIONS * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = (n + 1) + ' / ' + SECTIONS + ' разделов';
+  window.scrollTo(0, 0);
+}
+
+function switchTab(el, targetId) {
+  const tabGroup = el.parentElement;
+  const contentParent = tabGroup.nextElementSibling.parentElement;
+  tabGroup.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  contentParent.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById(targetId).classList.add('active');
+}
+
+function switchStep(el, targetId, groupId) {
+  const header = el.parentElement;
+  header.querySelectorAll('.step-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  const body = header.nextElementSibling;
+  body.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.getElementById(targetId).classList.add('active');
+}
+
+function copyCode(btn) {
+  const block = btn.parentElement;
+  const text = block.innerText.replace('Копировать\n', '');
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Скопировано!';
+    setTimeout(() => btn.textContent = 'Копировать', 1500);
+  });
+}
+
+buildQuiz();
+</script>
+</body>
+</html>
